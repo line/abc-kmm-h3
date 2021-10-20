@@ -1,0 +1,6 @@
+language = Objective-C
+headers = headers/h3.h headers/h3api.h headers/H3Cell.h headers/H3Utils.h headers/GeoCoord.h
+compilerOpts = -F/cinterop/h3
+linkerOpts = -F/cinterop/h3
+staticLibraries = libh3.a
+libraryPaths = cinterop/h3
