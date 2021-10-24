@@ -98,7 +98,7 @@ iOS
     ```bash
     use_frameworks!
 
-    platform :ios, '10.0'
+    platform :ios, '9.0'
 
     install! 'cocoapods', :deterministic_uuids => false
 
