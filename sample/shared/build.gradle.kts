@@ -6,9 +6,10 @@ plugins {
     kotlin("native.cocoapods")
 }
 
+version = "1.0"
+
 val h3Version: String by project
-val h3VersionLib = "com.linecorp:abc-kmm-h3:$h3Version"
-version = "0.1.1"
+val h3VersionLib = "com.linecorp.abc:kmm-h3:$h3Version"
 
 kotlin {
     val iosTarget: (String, KotlinNativeTarget.() -> Unit) -> KotlinNativeTarget =
@@ -28,8 +29,8 @@ kotlin {
 
     cocoapods {
         ios.deploymentTarget = "9.0"
-        homepage = "https://github.com/line/abc-h3-kmm/sample/iosApp"
-        summary = "Sample for h3-kmm"
+        homepage = "https://github.com/line/abc-kmm-h3/sample/iosApp"
+        summary = "Sample for abc-kmm-h3"
         podfile = project.file("../iosApp/Podfile")
     }
 

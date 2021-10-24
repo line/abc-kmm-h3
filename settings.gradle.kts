@@ -20,4 +20,4 @@ pluginManagement {
     }
 }
 
-rootProject.name = "abc-kmm-h3"
+rootProject.name = "kmm-h3"

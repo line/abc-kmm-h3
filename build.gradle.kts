@@ -1,4 +1,3 @@
-import org.jetbrains.kotlin.cli.common.toBooleanLenient
 
 buildscript {
     repositories {
@@ -32,20 +31,17 @@ allprojects {
 plugins {
     id("com.android.library")
     id("maven-publish")
+    id("signing")
     kotlin("multiplatform")
 }
 
-val libVersion = "0.1.7"
-val isSnapshotUpload = false
+group = "com.linecorp.abc"
+version = "0.1.7"
 
-group = "com.linecorp"
-version = libVersion
+val isSnapshotUpload = false
+val gitRepositoryName = "abc-${project.name}"
 
 kotlin {
-    android {
-        publishAllLibraryVariants()
-    }
-
     val enableGranularSourceSetsMetadata = project.extra["kotlin.mpp.enableGranularSourceSetsMetadata"]?.toString()?.toBoolean() ?: false
     if (enableGranularSourceSetsMetadata) {
         val iosTarget: (String, org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget.() -> Unit) -> org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget =
@@ -74,11 +70,12 @@ kotlin {
         }
     }
 
+    android {
+        publishAllLibraryVariants()
+    }
+
     sourceSets {
-        val commonMain by getting {
-            dependencies {
-            }
-        }
+        val commonMain by getting
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test-common"))
@@ -127,55 +124,83 @@ android {
     }
 }
 
-val isMavenLocal = System.getProperty("maven.local").toBooleanLenient() ?: false
-if (!isMavenLocal) {
-    publishing {
-        publications {
-            create<MavenPublication>("NaverRepo") {
-                if (isSnapshotUpload) {
-                    from(components.findByName("debug"))
-                } else {
-                    from(components.findByName("release"))
-                }
-
-                groupId = project.group.toString()
-                artifactId = artifactId
-                version = if (isSnapshotUpload) "$libVersion-SNAPSHOT" else libVersion
-
-                pom {
-                    name.set("$groupId:$artifactId")
-                    url.set("https://github.com/line/${project.name}")
-                    description.set("h3 for Kotlin Multiplatform")
-
-                    developers {
-                        developer {
-                            id.set("pisces")
-                            name.set("Steve Kim")
-                            email.set("pisces@linecorp.com")
-                        }
-                    }
-                    scm {
-                        connection.set("scm:git:ssh://github.com/line/${project.name}.git")
-                        developerConnection.set("scm:git:ssh://github.com/line/${project.name}.git")
-                        url.set("http://github.com/line/${project.name}")
-                    }
-                }
+publishing {
+    publications {
+        create<MavenPublication>("abcH3") {
+            if (isSnapshotUpload) {
+                from(components.findByName("debug"))
+            } else {
+                from(components.findByName("release"))
             }
-        }
-        repositories {
-            maven {
-                isAllowInsecureProtocol = true
-                url = if (isSnapshotUpload) {
-                    uri("http://repo.navercorp.com/m2-snapshot-repository")
-                } else {
-                    uri("http://repo.navercorp.com/maven2")
+
+            groupId = project.group.toString()
+            artifactId = project.name
+            version = if (isSnapshotUpload) "${project.version}-SNAPSHOT" else project.version.toString()
+
+            pom {
+                name.set(artifactId)
+                description.set("A library to convert Uber's H3 geo-index to LatLng vertices for Kotlin Multiplatform Mobile iOS and android")
+                url.set("https://github.com/line/$gitRepositoryName")
+
+                licenses {
+                    license {
+                        name.set("The Apache License, Version 2.0")
+                        url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
+                    }
                 }
 
-                credentials {
-                    username = System.getProperty("maven.username") ?: ""
-                    password = System.getProperty("maven.password") ?: ""
+                developers {
+                    developer {
+                        name.set("LINE Corporation")
+                        email.set("dl_oss_dev@linecorp.com")
+                        url.set("https://engineering.linecorp.com/en/")
+                    }
+                    developer {
+                        id.set("pisces")
+                        name.set("Steve Kim")
+                        email.set("pisces@linecorp.com")
+                    }
+                }
+
+                scm {
+                    connection.set("scm:git@github.com:line/$gitRepositoryName.git")
+                    developerConnection.set("scm:git:ssh://github.com:line/$gitRepositoryName.git")
+                    url.set("http://github.com/line/$gitRepositoryName")
                 }
             }
         }
     }
+    repositories {
+        maven {
+            name = "MavenCentral"
+            url = if (isSnapshotUpload) {
+                uri("https://oss.sonatype.org/content/repositories/snapshots/")
+            } else {
+                uri("https://oss.sonatype.org/service/local/staging/deploy/maven2/")
+            }
+
+            val sonatypeUsername: String? by project
+            val sonatypePassword: String? by project
+
+            println("sonatypeUsername, sonatypePassword -> $sonatypeUsername, ${sonatypePassword?.masked()}")
+
+            credentials {
+                username = sonatypeUsername ?: ""
+                password = sonatypePassword ?: ""
+            }
+        }
+    }
 }
+
+signing {
+    val signingKey: String? by project
+    val signingPassword: String? by project
+
+    println("signingKey, signingPassword -> ${signingKey?.slice(0..9)}, ${signingPassword?.masked()}")
+
+    isRequired = !isSnapshotUpload
+    useInMemoryPgpKeys(signingKey, signingPassword)
+    sign(publishing.publications["abcH3"])
+}
+
+fun String.masked() = map { "*" }.joinToString("")
